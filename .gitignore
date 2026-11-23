@@ -1,0 +1,10 @@
+.env
+*.dump
+.DS_Store
+.idea
+.vscode
+__pycache__/
+
+# Yuklanadigan fayllar repoga tushmasin
+data/*
+!data/.gitkeep
