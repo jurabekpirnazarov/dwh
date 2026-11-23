@@ -92,6 +92,17 @@ Faylni vaqtinchalik SQL Server konteynerida tiklaydi va jadvallar, ustunlar, bog
 ./scripts/mssql_bak.sh down                         # tugatgach konteynerni o'chirish
 ```
 
+## Ma'lumotlarni boshqa diskka ko'chirish
+
+Standart holatda ma'lumotlar Docker volume'da (`/var/lib/docker`) turadi. Boshqa joyga ko'chirish:
+
+```bash
+./scripts/move_data.sh /mnt/disk2/dwh_pgdata
+```
+
+Baza qisqa vaqtga to'xtaydi, ma'lumotlar nusxalanadi, `.env` ga `DWH_DATA_DIR` yoziladi va baza yangi joydan ishga tushadi.
+Eski nusxa o'chirilmaydi, tekshirgach o'zingiz o'chirasiz.
+
 ## Zaxira nusxa
 
 ```bash

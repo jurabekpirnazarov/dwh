@@ -26,7 +26,8 @@ services:
       - max_wal_size=4GB
     shm_size: 1gb
     volumes:
-      - dwh_pgdata:/var/lib/postgresql/data
+      # DWH_DATA_DIR berilmasa Docker volume; boshqa diskka ko'chirish: scripts/move_data.sh
+      - ${DWH_DATA_DIR:-dwh_pgdata}:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
     ports:
       - "${DWH_BIND:-0.0.0.0}:${DWH_PORT:-5440}:5432"
