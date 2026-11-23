@@ -79,6 +79,17 @@ docker compose run --rm loader savdo.csv --table savdo --mode append
 - Standart rejim `replace` (jadval qayta yaratiladi), `--mode append` ustiga qo'shadi.
 - Har yuklash `meta.load_log` ga yoziladi. Xato bo'lsa, eski jadval o'zgarmaydi.
 
+## MS SQL Server `.bak` faylini tahlil qilish
+
+Faylni vaqtinchalik SQL Server konteynerida tiklaydi va jadvallar, ustunlar, bog'lanishlar bo'yicha hisobot beradi
+(kamida 2 GB bo'sh RAM va fayl hajmidan bir necha barobar bo'sh disk kerak):
+
+```bash
+./scripts/mssql_bak.sh inspect data/baza.bak        # hisobot: data/baza_hisobot.txt
+./scripts/mssql_bak.sh sql "SELECT TOP 5 * FROM dbo.jadval"
+./scripts/mssql_bak.sh down                         # tugatgach konteynerni o'chirish
+```
+
 ## Zaxira nusxa
 
 ```bash

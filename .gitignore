@@ -8,3 +8,4 @@ __pycache__/
 # Yuklanadigan fayllar repoga tushmasin
 data/*
 !data/.gitkeep
+.mssql_tmp_pw
