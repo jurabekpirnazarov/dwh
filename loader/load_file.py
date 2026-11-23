@@ -89,6 +89,14 @@ def main():
         try:
             # Bitta tranzaksiya: xato bo'lsa eski jadval o'z holicha qoladi
             with engine.begin() as c:
+                # replace jadvalni qayta yaratadi: foydalanuvchilarga berilgan
+                # huquqlar yo'qolmasligi uchun oldindan eslab qolamiz
+                grants = c.execute(text(
+                    "SELECT g.rolname, a.privilege_type "
+                    "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace, "
+                    "     aclexplode(c.relacl) a JOIN pg_roles g ON g.oid = a.grantee "
+                    "WHERE n.nspname = :s AND c.relname = :t AND a.grantee <> c.relowner"),
+                    {"s": a.schema, "t": table}).all() if a.mode == "replace" else []
                 for i, df in enumerate(chunks):
                     df.columns = unique_names(df.columns)
                     df["_source_file"] = path.name
@@ -97,6 +105,9 @@ def main():
                               if_exists=a.mode if i == 0 else "append",
                               method="multi", chunksize=1_000)
                     total += len(df)
+                q = engine.dialect.identifier_preparer.quote
+                for role, priv in grants:
+                    c.execute(text(f"GRANT {priv} ON {q(a.schema)}.{q(table)} TO {q(role)}"))
             with engine.begin() as c:
                 c.execute(text("UPDATE meta.load_log SET status='ok', rows_loaded=:n, "
                                "finished_at=now() WHERE id=:i"), {"n": total, "i": log_id})

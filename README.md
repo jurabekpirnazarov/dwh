@@ -18,7 +18,8 @@ PostgreSQL 16 asosidagi ma'lumotlar ombori. Server: `172.30.30.30` (`qamal`).
 |--------------|-----------------------------------------------|--------------------------|
 | `dwh_admin`  | To'liq (superuser)                            | Faqat ma'mur             |
 | `dwh_loader` | `raw`/`staging`/`core`/`mart` ga yozadi       | Yuklagich, ETL           |
-| `dwh_reader` | Faqat `core` va `mart` ni o'qiydi             | BI, tahlilchilar         |
+| `dwh_reader` | Faqat `core`, `mart`, `features` ni o'qiydi   | BI, tahlilchilar         |
+| shaxsiy      | Faqat ruxsat berilgan jadval/sxemalar         | Har bir odam o'z logini bilan |
 
 ## Serverda ishga tushirish
 
@@ -35,6 +36,34 @@ Sxemalar va rollar faqat birinchi ishga tushishda (bo'sh volume) yaratiladi.
 Xotira sozlamalarini (`DWH_SHARED_BUFFERS` va b.) serverning RAM hajmiga qarab `.env` da o'zgartiring.
 
 Ulanish: `psql -h 172.30.30.30 -p 5440 -U dwh_reader dwh`
+
+## Foydalanuvchilar va jadval bo'yicha ruxsat
+
+Har bir odamga alohida login ochiladi; yangi login hech narsani ko'rmaydi, ruxsat jadval yoki sxema bo'yicha beriladi.
+
+```bash
+./scripts/user.sh add ali                         # login + parol (bir marta ko'rsatiladi)
+./scripts/user.sh grant ali mart.savdo core.hudud # faqat shu jadvallarni o'qiydi
+./scripts/user.sh grant-schema ali features       # butun sxema, yangi jadvallar ham
+./scripts/user.sh revoke ali mart.savdo
+./scripts/user.sh full jurabek                    # ombor egasi: hammasini o'qiydi va yozadi
+./scripts/user.sh disable ali                     # kirishni o'chirish
+./scripts/user.sh list                            # kimda qanday huquq bor
+```
+
+Jadval `replace` rejimida qayta yuklanganda berilgan huquqlar saqlanib qoladi.
+
+## Feature store
+
+`features` sxemasi. Nomlash: `features.<obyekt>__<guruh>` (masalan `features.korxona__moliya`),
+har jadvalda obyekt kaliti va `as_of_date` (belgi qaysi sanaga hisoblangan) ustuni bo'ladi.
+Har jadval `meta.feature_catalog` ga yoziladi: obyekt, kalit, tavsif, manba, mas'ul, yangilanish davri.
+
+Ishlab turgan bazaga qo'shish (yangi o'rnatishda avtomatik):
+
+```bash
+docker compose exec -T db psql -U dwh_admin -d dwh < init/02_features.sql
+```
 
 ## Fayl yuklash
 
