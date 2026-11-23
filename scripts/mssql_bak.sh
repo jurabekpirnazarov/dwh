@@ -2,6 +2,8 @@
 # MS SQL Server .bak faylini vaqtinchalik konteynerda tiklaydi va tahlil qiladi.
 #   ./scripts/mssql_bak.sh inspect <fayl.bak>   tiklash + hisobot (data/<fayl>_hisobot.txt)
 #   ./scripts/mssql_bak.sh sql "<so'rov>"       tiklangan bazada so'rov bajarish
+#   ./scripts/mssql_bak.sh profile <sxema.jadval>      ustunlar profili (to'ldirilganlik, noyob qiymatlar)
+#   ./scripts/mssql_bak.sh load <sxema.jadval> [raw.nom]   jadvalni DWH ga ko'chirish
 #   ./scripts/mssql_bak.sh down                 vaqtinchalik konteynerni o'chirish
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -119,8 +121,30 @@ inspect)
     echo ">> Tugatgach: ./scripts/mssql_bak.sh down"
     ;;
 sql)
-    [ -f "$PWFILE" ] || { echo "Avval: ./scripts/mssql_bak.sh inspect <fayl.bak>"; exit 1; }
+    [ -s "$PWFILE" ] || { echo "Avval: ./scripts/mssql_bak.sh inspect <fayl.bak>"; exit 1; }
     q -d "$DBNAME" -Q "${2:?SQL matnini bering}"
+    ;;
+profile)
+    [ -s "$PWFILE" ] || { echo "Avval: ./scripts/mssql_bak.sh inspect <fayl.bak>"; exit 1; }
+    tbl="${2:?Jadval kerak: ./scripts/mssql_bak.sh profile dbo.jadval}"
+    [[ "$tbl" =~ ^[A-Za-z0-9_]+\.[A-Za-z0-9_]+$ ]] || { echo "Jadval nomi sxema.jadval bo'lsin: $tbl"; exit 1; }
+    out="data/$(echo "$tbl" | tr '.' '_')_profil.txt"
+    echo ">> Har bir ustun tekshirilmoqda (katta jadvalda bir necha daqiqa) ..."
+    docker cp scripts/mssql_profile.sql "$NAME:/tmp/profile.sql"
+    q -d "$DBNAME" -s "|" -v tbl="$tbl" -i /tmp/profile.sql > "$out" || { cat "$out"; exit 1; }
+    cat "$out"
+    echo; echo ">> Saqlandi: $out"
+    ;;
+load)
+    [ -s "$PWFILE" ] || { echo "Avval: ./scripts/mssql_bak.sh inspect <fayl.bak>"; exit 1; }
+    tbl="${2:?Jadval kerak: ./scripts/mssql_bak.sh load dbo.jadval [raw.nom]}"
+    # SQL Server konteynerini DWH tarmog'iga ulaymiz, yuklagich uni nomi bilan topadi
+    net="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' \
+        "$(docker compose ps -q db)" | awk '{print $1}')"
+    docker network connect "$net" "$NAME" 2>/dev/null || true
+    echo ">> $tbl -> DWH ko'chirilmoqda ..."
+    docker compose run --rm --build -e MSSQL_PASSWORD="$(pw)" -e MSSQL_HOST="$NAME" \
+        -e MSSQL_DB="$DBNAME" --entrypoint python loader /app/mssql_to_pg.py "$tbl" ${3:+--target "$3"}
     ;;
 down)
     docker rm -f -v "$NAME" >/dev/null 2>&1 || true
@@ -128,6 +152,6 @@ down)
     echo "Vaqtinchalik SQL Server o'chirildi"
     ;;
 *)
-    sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//'; exit 1
+    sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 1
     ;;
 esac

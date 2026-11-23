@@ -87,6 +87,8 @@ Faylni vaqtinchalik SQL Server konteynerida tiklaydi va jadvallar, ustunlar, bog
 ```bash
 ./scripts/mssql_bak.sh inspect data/baza.bak        # hisobot: data/baza_hisobot.txt
 ./scripts/mssql_bak.sh sql "SELECT TOP 5 * FROM dbo.jadval"
+./scripts/mssql_bak.sh profile dbo.jadval            # har ustun: to'ldirilganlik %, noyob qiymatlar, taqsimot
+./scripts/mssql_bak.sh load dbo.jadval raw.nom      # jadvalni DWH ga ko'chirish (turlari saqlanadi)
 ./scripts/mssql_bak.sh down                         # tugatgach konteynerni o'chirish
 ```
 
