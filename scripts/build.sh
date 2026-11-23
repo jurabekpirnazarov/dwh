@@ -26,8 +26,9 @@ done
 echo
 docker compose exec -T db psql -q -U "$ADMIN" -d "$DB" -c "
 SELECT n.nspname || '.' || c.relname AS jadval,
-       to_char(c.reltuples::bigint, 'FM999G999G999G990') AS qatorlar,
+       to_char((xpath('/row/n/text()', query_to_xml(format('SELECT count(*) AS n FROM %I.%I',
+               n.nspname, c.relname), false, true, '')))[1]::text::bigint, 'FM999G999G999G990') AS qatorlar,
        pg_size_pretty(pg_total_relation_size(c.oid)) AS hajm
 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE c.relkind = 'r' AND n.nspname IN ('raw', 'staging', 'core', 'mart', 'features')
-ORDER BY array_position(ARRAY['raw','staging','core','mart','features'], n.nspname::text), 2 DESC"
+ORDER BY array_position(ARRAY['raw','staging','core','mart','features'], n.nspname::text), c.relname"
