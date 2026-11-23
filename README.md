@@ -65,6 +65,25 @@ Ishlab turgan bazaga qo'shish (yangi o'rnatishda avtomatik):
 docker compose exec -T db psql -U dwh_admin -d dwh < init/02_features.sql
 ```
 
+## Modellar (raw -> staging -> core -> features)
+
+`sql/` papkasidagi fayllar nomidagi tartib bilan bajariladi, har biri bitta tranzaksiyada:
+
+```bash
+./scripts/build.sh        # hammasi
+./scripts/build.sh 020    # faqat bittasi
+```
+
+| Jadval | Mazmuni |
+|---|---|
+| `raw.korxona_reyestr` | Manbadan (`baza.bak`, `dbo.baza`) o'zgarishsiz |
+| `staging.korxona` | Tozalangan: bo'shliqlar, soxta sanalar, yaroqsiz INN/e-mail, `OKPO` bo'yicha takrorlarsiz |
+| `core.korxona` | Har subyekt bitta qator, `holat` (faol / faoliyatsiz / tugatilgan) bilan |
+| `core.korxona_tasischi` | Har ta'sischi bitta qator |
+| `features.korxona__asosiy` | Yoshi, xodimlar toifasi, ta'sischilar soni, xorijiy ulush, holat belgilari |
+
+Jadvallar qayta qurilganda foydalanuvchilarga berilgan huquqlar saqlanadi (TRUNCATE + INSERT).
+
 ## Fayl yuklash
 
 Faylni `data/` ga qo'ying (CSV, TSV, Excel, Parquet, JSON), so'ng:
